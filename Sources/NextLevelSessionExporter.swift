@@ -47,6 +47,8 @@ public enum NextLevelSessionExporterError: Error, CustomStringConvertible {
 
 private let NextLevelSessionExporterInputQueue = "NextLevelSessionExporterInputQueue"
 
+public typealias NextLevelDevicePosition = AVCaptureDevice.Position
+
 /// 🔄 NextLevelSessionExporter, export and transcode media in Swift
 public class NextLevelSessionExporter: NSObject {
     
@@ -180,7 +182,7 @@ extension NextLevelSessionExporter {
     ///
     /// - Parameter completionHandler: Handler called when an export session completes.
     /// - Throws: Failure indication thrown when an error has occurred during export.
-    public func export(renderHandler: RenderHandler? = nil, progressHandler: ProgressHandler? = nil, completionHandler: CompletionHandler? = nil) throws {
+    public func export(renderHandler: RenderHandler? = nil, progressHandler: ProgressHandler? = nil, devicePosition: NextLevelDevicePosition, completionHandler: CompletionHandler? = nil) throws {
         self.cancelExport()
         
         self._progressHandler = progressHandler
@@ -260,6 +262,9 @@ extension NextLevelSessionExporter {
                 if self._writer?.canApply(outputSettings: self.videoOutputConfiguration, forMediaType: AVMediaType.video) == true {
                     self._videoInput = AVAssetWriterInput(mediaType: AVMediaType.video, outputSettings: self.videoOutputConfiguration)
                     self._videoInput?.expectsMediaDataInRealTime = self.expectsMediaDataInRealTime
+                    if devicePosition == .front {
+                        self._videoInput?.transform = CGAffineTransform(scaleX: -1.0, y: 1) //scale it for front facing videos.
+                    }
                 } else {
                     fatalError("Unsupported output configuration")
                 }
@@ -633,6 +638,7 @@ extension AVAsset {
                                    videoInputConfiguration: [String : Any]? = nil,
                                    videoOutputConfiguration: [String : Any],
                                    audioOutputConfiguration: [String : Any],
+                                   devicePosition: NextLevelDevicePosition,
                                    progressHandler: NextLevelSessionExporter.ProgressHandler? = nil,
                                    completionHandler: NextLevelSessionExporter.CompletionHandler? = nil) {
         let exporter = NextLevelSessionExporter(withAsset: self)
@@ -640,7 +646,7 @@ extension AVAsset {
         exporter.outputURL = outputURL
         exporter.videoOutputConfiguration = videoOutputConfiguration
         exporter.audioOutputConfiguration = audioOutputConfiguration
-        try? exporter.export(progressHandler: progressHandler, completionHandler: completionHandler)
+        try? exporter.export(progressHandler: progressHandler, devicePosition: devicePosition, completionHandler: completionHandler)
     }
     
 }

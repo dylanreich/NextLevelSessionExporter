@@ -66,7 +66,7 @@ class ViewController: UIViewController {
         do {
             try exporter.export(progressHandler: { (progress) in
                 print(progress)
-            }, completionHandler: { (status) in
+            }, devicePosition: .unspecified, completionHandler: { (status) in
                 switch status {
                 case .completed:
                     print("NextLevelSessionExporter, export completed, \(exporter.outputURL?.description ?? "")")
